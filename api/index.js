@@ -31,7 +31,7 @@ app.post("/api/login", (req, res) => {
 });
 
 const verify = (req, res, next) => {
-  const authHeader = req.headers.Authorization;
+  const authHeader = req.headers.authorization;
   if (authHeader) {
     const token = authHeader.split(" ")[1];
     jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
@@ -45,6 +45,14 @@ const verify = (req, res, next) => {
     res.status(401).json("you are not authenticated");
   }
 };
+
+app.delete("/api/users/:userId", verify, (req, res) => {
+  if (req.user.id == req.params.userId || req.user.isAdmin) {
+    res.status(200).json("user has been deleted");
+  } else {
+    res.status(403).json("you are not allowed to delete this user");
+  }
+});
 
 app.listen(3000, () => {
   console.log("Backend server is running");
