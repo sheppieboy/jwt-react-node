@@ -2,6 +2,9 @@ const express = require("express");
 const app = express();
 const jwt = require("jsonwebtoken");
 const users = require("./data");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 app.use(express.json());
 
@@ -12,7 +15,16 @@ app.post("/api/login", (req, res) => {
   });
 
   if (user) {
-    res.json(user);
+    //generate an access token
+    const accessToken = jwt.sign(
+      { id: user.id, isAdmin: user.isAdmin },
+      process.env.SECRET_KEY
+    );
+    res.json({
+      username: user.username,
+      isAdmin: user.isAdmin,
+      accessToken,
+    });
   } else {
     res.status(400).json("username or password incorrect");
   }
