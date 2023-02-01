@@ -1,4 +1,4 @@
-export const users = [
+const users = [
   {
     id: "1",
     username: "luke",
@@ -12,3 +12,5 @@ export const users = [
     isAdmin: false,
   },
 ];
+
+module.exports = users;
