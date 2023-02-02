@@ -99,6 +99,12 @@ const verify = (req, res, next) => {
   }
 };
 
+app.post("/api/logout", verify, (req, res) => {
+  const refreshToken = req.body.token,
+    refreshTokens = filter((token) => token !== refreshToken);
+  res.status(200).json("you are logged out successfully");
+});
+
 app.delete("/api/users/:userId", verify, (req, res) => {
   if (req.user.id == req.params.userId || req.user.isAdmin) {
     res.status(200).json("user has been deleted");
