@@ -8,6 +8,58 @@ dotenv.config();
 
 app.use(express.json());
 
+let refreshTokens = [];
+
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    { id: user.id, isAdmin: user.isAdmin },
+    process.env.SECRET_KEY,
+    {
+      expiresIn: "15m",
+    }
+  );
+};
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { id: user.id, isAdmin: user.isAdmin },
+    process.env.REFRESH_SECRET_KEY,
+    { expiresIn: "15m" }
+  );
+};
+
+app.post("/api/refresh", (req, res) => {
+  //take the refresh token from the user
+  const refreshToken = req.body.token;
+
+  //send error if there is no token or invalid token
+  if (!refreshToken) {
+    return res.status(401).json("you are not authenticated");
+  }
+
+  if (!refreshTokens.includes(refreshToken)) {
+    return res.status(403).json("RefreshToken is not valid");
+  }
+
+  jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY, (err, user) => {
+    err && console.log(err);
+    refreshTokens = refreshTokens.filter((token) => {
+      token !== refreshToken;
+    });
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    refreshTokens.push(newRefreshToken);
+
+    res.status(200).json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  });
+
+  //create new access token and send to user
+});
+
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
   const user = users.find((u) => {
@@ -16,14 +68,15 @@ app.post("/api/login", (req, res) => {
 
   if (user) {
     //generate an access token
-    const accessToken = jwt.sign(
-      { id: user.id, isAdmin: user.isAdmin },
-      process.env.SECRET_KEY
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    refreshTokens.push(refreshToken);
+
     res.json({
       username: user.username,
       isAdmin: user.isAdmin,
       accessToken,
+      refreshToken,
     });
   } else {
     res.status(400).json("username or password incorrect");
