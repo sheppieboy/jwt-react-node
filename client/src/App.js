@@ -24,6 +24,11 @@ function App() {
     setSuccess(false);
     setError(false);
     try {
+      await axios.delete("/users/" + id, {
+        headers: {
+          Authorization: "Bearer " + user.accessToken,
+        },
+      });
       setSuccess(true);
     } catch (err) {
       setError(true);
