@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import axios from "axios";
+import jwt_decode from "jwt-decode";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -8,6 +9,37 @@ function App() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const refreshToken = async (e) => {
+    try {
+      const res = await axios.post("/refresh", { token: user.refreshToken });
+      setUser({
+        ...user,
+        accessToken: res.data.accessToken,
+        refreshToken: res.data.refreshToken,
+      });
+      return res.data;
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const axiosJWT = axios.create();
+
+  axiosJWT.interceptors.request.use(
+    async (config) => {
+      let currentDate = new Date();
+      const decodedToken = jwt_decode(user.accessToken);
+      if (decodedToken.exp * 1000 < currentDate.getTime()) {
+        const data = await refreshToken();
+        config.headers["Authorization"] = "Bearer " + data.accessToken;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +56,7 @@ function App() {
     setSuccess(false);
     setError(false);
     try {
-      await axios.delete("/users/" + id, {
+      await axiosJWT.delete("/users/" + id, {
         headers: {
           Authorization: "Bearer " + user.accessToken,
         },
