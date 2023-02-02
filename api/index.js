@@ -15,7 +15,7 @@ const generateAccessToken = (user) => {
     { id: user.id, isAdmin: user.isAdmin },
     process.env.SECRET_KEY,
     {
-      expiresIn: "15m",
+      expiresIn: "15s",
     }
   );
 };
